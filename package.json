@@ -1,0 +1,17 @@
+{
+  "name": "business-brain",
+  "version": "0.1.0",
+  "description": "Ask a question about the business, get a one-page visual answer. A probabilistic generator wrapped in a deterministic grounding gate: every rendered fact must quote a canon document verbatim, or it is refused and never drawn. Reuses redaction-gate on egress and gtm-agent-evals for scoring.",
+  "type": "module",
+  "license": "MIT",
+  "bin": {
+    "brain": "cli.mjs"
+  },
+  "scripts": {
+    "test": "node --test"
+  },
+  "dependencies": {
+    "redaction-gate": "github:derrtaderr/redaction-gate",
+    "gtm-agent-evals": "github:derrtaderr/gtm-agent-evals"
+  }
+}

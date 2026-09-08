@@ -1,0 +1,14 @@
+{
+  "recordedWith": {
+    "note": "Synthetic. A fact that GROUNDS (its quote is a real line of the ads doc) but STRAYS wildly from that quote — the fabrication case the faithfulness layer exists to catch. The gate passes it (the quote is real); --strict refuses it (its words share nothing with the quote)."
+  },
+  "question": "is Harbor healthy?",
+  "candidates": [
+    {
+      "id": "doom",
+      "text": "Harbor is insolvent and drove a ninety percent revenue collapse this quarter.",
+      "groundings": [{ "docId": "ads", "quote": "spends thirty two thousand dollars a month on LinkedIn ads" }]
+    }
+  ],
+  "visuals": []
+}

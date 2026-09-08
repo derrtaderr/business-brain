@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>how are the ads performing?</title>
+<style>
+  :root { color-scheme: light; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #f6f7f9; color: #1a1c22;
+         font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+  .wrap { max-width: 900px; margin: 0 auto; padding: 40px 24px 64px; }
+  .q { font-size: 24px; font-weight: 680; letter-spacing: -0.02em; margin: 0 0 4px; text-wrap: balance; }
+  .meta { color: #6b7280; margin: 0 0 28px; font-size: 13px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
+  .card { background: #fff; border: 1px solid #e5e7eb; border-radius: 14px; padding: 18px; }
+  .card h3 { margin: 0 0 10px; font-size: 13px; text-transform: uppercase; letter-spacing: 0.06em; color: #6b7280; font-weight: 600; }
+  .stat .val { font-size: 30px; font-weight: 700; letter-spacing: -0.02em; }
+  .stat .note { color: #6b7280; font-size: 13px; margin-top: 4px; }
+  .bar { background: #eef0f3; border-radius: 999px; height: 12px; overflow: hidden; margin-top: 6px; }
+  .bar > span { display: block; height: 100%; background: #2f6df6; }
+  .bar-label { font-size: 13px; color: #374151; margin-top: 6px; }
+  .verdict { border-left: 4px solid #9ca3af; }
+  .verdict-green { border-left-color: #17a34a; }
+  .verdict-amber { border-left-color: #d69e2e; }
+  .verdict-red   { border-left-color: #e11d48; }
+  .verdict .line { font-size: 16px; font-weight: 560; }
+  .diagram ol { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .diagram li { background: #eef2ff; border: 1px solid #dbe0f5; border-radius: 8px; padding: 6px 10px; font-size: 13px; }
+  .diagram li::after { content: "\2192"; margin-left: 10px; color: #9ca3af; }
+  .diagram li:last-child::after { content: ""; margin: 0; }
+  .evi { margin-top: 10px; padding-top: 8px; border-top: 1px dashed #e5e7eb; color: #6b7280; font-size: 12px; font-style: italic; }
+  .grounded { margin-top: 36px; border-top: 1px solid #e5e7eb; padding-top: 18px; }
+  .grounded h2, .refused h2 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.06em; color: #9ca3af; margin: 0 0 10px; }
+  .grounded li { margin-bottom: 12px; font-size: 14px; color: #1a1c22; list-style: none; }
+  .grounded ul, .refused ul { padding-left: 0; }
+  .grounded .quote { color: #6b7280; font-size: 13px; margin-top: 3px; }
+  .grounded .quote::before { content: "\201C"; }
+  .grounded .quote::after { content: "\201D"; }
+  .refused { margin-top: 28px; border-top: 1px solid #e5e7eb; padding-top: 18px; }
+  .refused li { color: #6b7280; font-size: 13px; margin-bottom: 6px; list-style: none; }
+  .refused .rtext { color: #374151; }
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1 class="q">how are the ads performing?</h1>
+<p class="meta">Grounded answer · 3 fact(s), 3 visual(s) · recorded · 2026-09-08T01:08:51.783Z</p>
+<div class="grid">
+<div class="card stat"><h3>Monthly ad spend</h3><div class="val">$32k / mo</div><div class="evi">from canon: spends thirty two thousand dollars a month on LinkedIn ads</div></div>
+<div class="card stat"><h3>Cost per qualified opportunity</h3><div class="val">$900</div><div class="note">down from $1,400</div><div class="evi">from canon: cost per qualified opportunity is nine hundred dollars, down from fourteen hundred a quarter ago</div></div>
+<div class="card"><h3>Click to booked meeting</h3><div class="bar"><span style="width: 2.3%"></span></div><div class="bar-label">2.3% of 100%</div><div class="evi">from canon: conversion rate from click to booked meeting is two point three percent</div></div>
+</div>
+<section class="grounded"><h2>Grounded in canon (3)</h2><ul><li>Harbor spends thirty two thousand dollars a month on LinkedIn ads.<div class="quote">spends thirty two thousand dollars a month on LinkedIn ads</div></li><li>The blended cost per qualified opportunity is nine hundred dollars, down from fourteen hundred a quarter ago.<div class="quote">blended cost per qualified opportunity is nine hundred dollars, down from fourteen hundred a quarter ago</div></li><li>The click-to-booked-meeting conversion rate is two point three percent.<div class="quote">conversion rate from click to booked meeting is two point three percent</div></li></ul></section>
+<section class="refused"><h2>Refused (1) — claims the canon could not ground</h2><ul><li><span class="rtext">The ad program drove a fifty percent increase in revenue this quarter.</span> — quote does not appear in the content of ads</li></ul></section>
+</div>
+</body>
+</html>

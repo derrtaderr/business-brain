@@ -11,7 +11,7 @@ export class UsageError extends Error {
   }
 }
 
-const COMMANDS = Object.freeze(["ask"]);
+const COMMANDS = Object.freeze(["ask", "report"]);
 
 function takeValue(argv, flag) {
   const idx = argv.indexOf(flag);
@@ -46,7 +46,15 @@ export function parseArgs(rawArgv) {
   const command = argv.shift();
   if (!command) throw new UsageError(`no command — expected: ${COMMANDS.join(", ")}`);
   if (!COMMANDS.includes(command)) throw new UsageError(`unknown command "${command}" — expected: ${COMMANDS.join(", ")}`);
+  if (command === "report") return parseReport(argv);
   return parseAsk(argv);
+}
+
+function parseReport(argv) {
+  const telemetry = takeValue(argv, "--telemetry");
+  const out = takeValue(argv, "--out") ?? "dashboard/index.html";
+  refuseLeftovers(argv, "report");
+  return Object.freeze({ command: "report", telemetry, out });
 }
 
 function parseAsk(argv) {
@@ -55,6 +63,8 @@ function parseAsk(argv) {
   const corpus = takeValue(argv, "--corpus");
   const transcript = takeValue(argv, "--transcript");
   const out = takeValue(argv, "--out") ?? "out/answer.html";
+  const telemetry = takeValue(argv, "--telemetry");
+  const strict = takeBool(argv, "--strict");
 
   if (!question) throw new UsageError("ask needs --question TEXT — the question to answer");
   if (!corpus) throw new UsageError("ask needs --corpus DIR — the canon corpus directory to ground against");
@@ -63,5 +73,5 @@ function parseAsk(argv) {
   if (!out.endsWith(".html")) throw new UsageError(`--out must be a .html path, got ${out}`);
 
   refuseLeftovers(argv, "ask");
-  return Object.freeze({ command: "ask", mode, question, corpus, transcript, out });
+  return Object.freeze({ command: "ask", mode, question, corpus, transcript, out, telemetry, strict });
 }

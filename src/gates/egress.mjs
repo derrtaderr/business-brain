@@ -11,7 +11,7 @@
 
 import { writeFileSync, mkdirSync } from "node:fs";
 import { dirname } from "node:path";
-import { createGate } from "redaction-gate";
+import { createGate, redact } from "redaction-gate";
 
 /**
  * @param {object} [opts]
@@ -45,6 +45,16 @@ export function createEgress({ roster = [], allowDomains = [], allow = [] } = {}
      *  on disk when a survivor trips the gate. */
     writeArtifact(html, path) {
       return writeGuarded({ path, text: html });
+    },
+    /** Redact a single string with THIS egress's config. Fail closed: anything
+     *  redact refuses comes back as a marker, never the raw text — telemetry
+     *  uses this so events.jsonl is post-redaction. */
+    redactText(text) {
+      try {
+        return redact(String(text), config);
+      } catch (err) {
+        return `[unredactable: ${err?.name ?? "error"}]`;
+      }
     },
   };
 }

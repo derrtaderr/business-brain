@@ -12,8 +12,10 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { readEvents } from "gtm-agent-evals/dist/index.js";
+
 import { parseArgs } from "../../src/cli/args.mjs";
-import { askCommand } from "../../src/cli/ask.mjs";
+import { askCommand, reportCommand } from "../../src/cli/ask.mjs";
 import { main } from "../../src/cli/main.mjs";
 
 const HARBOR = fileURLToPath(new URL("../../fixtures/harbor-canon/", import.meta.url));
@@ -71,6 +73,62 @@ test("main routes ask and returns its code; a bad command exits 2", async () => 
   assert.equal(ok, 0);
   const bad = await main(["explode"], deps);
   assert.equal(bad, 2);
+});
+
+test("ask records a faithfulness verdict to telemetry and reports it in the summary", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "bb-ask-"));
+  const telemetry = join(dir, "telemetry", "events.jsonl");
+  const opts = parseArgs(["ask", "--question", "how are the ads performing?", "--corpus", HARBOR, "--transcript", ADS, "--out", join(dir, "a.html"), "--telemetry", telemetry]);
+  const { out, deps } = io();
+
+  const code = await askCommand(opts, deps);
+  assert.equal(code, 0);
+  assert.match(out.join(""), /faithfulness PASS/);
+
+  const events = readEvents(telemetry);
+  assert.equal(events.length, 1);
+  assert.equal(events[0].configId, "business-brain-faithfulness");
+  assert.equal(events[0].verdict.status, "PASS");
+});
+
+test("--strict refuses to deliver a low-faithfulness answer, exit 3, nothing written, but the verdict is still recorded", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "bb-ask-"));
+  const telemetry = join(dir, "telemetry", "events.jsonl");
+  const { writeFileSync } = await import("node:fs");
+  // A fact that grounds (its quote is real) but strays wildly from that quote.
+  const strayTranscript = join(dir, "stray.json");
+  writeFileSync(
+    strayTranscript,
+    JSON.stringify({
+      question: "is Harbor healthy?",
+      candidates: [{ id: "doom", text: "Harbor is insolvent and collapsed ninety percent overnight suddenly.", groundings: [{ docId: "ads", quote: "spends thirty two thousand dollars a month on LinkedIn ads" }] }],
+      visuals: [],
+    }),
+    "utf8",
+  );
+  const opts = parseArgs(["ask", "--question", "is Harbor healthy?", "--corpus", HARBOR, "--transcript", strayTranscript, "--out", join(dir, "a.html"), "--telemetry", telemetry, "--strict"]);
+  const { err, deps } = io();
+
+  const code = await askCommand(opts, deps);
+  assert.equal(code, 3, "strict refuses a low-faithfulness answer");
+  assert.match(err.join(""), /strict: refusing/);
+  assert.equal(existsSync(join(dir, "a.html")), false, "nothing is written on a strict refusal");
+  assert.equal(readEvents(telemetry)[0].verdict.status, "BLOCK", "the BLOCK verdict is still on the record");
+});
+
+test("report renders the faithfulness dashboard over the telemetry", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "bb-ask-"));
+  const telemetry = join(dir, "telemetry", "events.jsonl");
+  // Produce one run first.
+  await askCommand(parseArgs(["ask", "--question", "how are the ads performing?", "--corpus", HARBOR, "--transcript", ADS, "--out", join(dir, "a.html"), "--telemetry", telemetry]), io().deps);
+
+  const { out, deps } = io();
+  const code = await reportCommand(parseArgs(["report", "--telemetry", telemetry, "--out", join(dir, "dash.html")]), deps);
+  assert.equal(code, 0);
+  const html = readFileSync(join(dir, "dash.html"), "utf8");
+  assert.match(html, /Pass rate/);
+  assert.match(html, /business-brain-faithfulness/);
+  assert.match(out.join(""), /dash\.html/);
 });
 
 test("a bad --corpus path is a usage error (exit 2), not a defect — the user's input to fix", async () => {

@@ -2,7 +2,7 @@
 // to exit 2. cli.mjs does exactly this and then calls process.exit.
 
 import { parseArgs, UsageError } from "./args.mjs";
-import { askCommand, EXIT } from "./ask.mjs";
+import { askCommand, reportCommand, EXIT } from "./ask.mjs";
 
 /**
  * @param {string[]} argv process.argv.slice(2)
@@ -20,5 +20,6 @@ export async function main(argv, deps) {
     }
     throw err;
   }
+  if (opts.command === "report") return reportCommand(opts, deps);
   return askCommand(opts, deps);
 }

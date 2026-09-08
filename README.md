@@ -48,11 +48,8 @@ npm install                # redaction-gate + gtm-agent-evals, from GitHub
 npm test                   # 67 tests, node:test, keyless
 ```
 
-Known wiring note (shared with account-scout): `gtm-agent-evals` ships TypeScript
-with no `prepare` script, so a fresh git install has no `dist/`. The
-telemetry/dashboard reuse imports from it, so until the one-line upstream fix
-lands, build it in place once: `cd node_modules/gtm-agent-evals && npx tsc`. The
-gate, renderer, generators, and the lexical scorer need no such step.
+A fresh clone installs and tests clean — `gtm-agent-evals` builds its own `dist/`
+on install (via its `prepare` script), so nothing here needs a manual build step.
 
 ## The CLI
 

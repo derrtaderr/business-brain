@@ -116,6 +116,33 @@ test("--strict refuses to deliver a low-faithfulness answer, exit 3, nothing wri
   assert.equal(readEvents(telemetry)[0].verdict.status, "BLOCK", "the BLOCK verdict is still on the record");
 });
 
+test("--judge combines the semantic judge with the lexical scorer — a semantic BLOCK refuses under --strict even when the words overlap", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "bb-ask-"));
+  const telemetry = join(dir, "telemetry", "events.jsonl");
+  // The ads answer passes the lexical check (its words track the quotes). Inject
+  // a semantic judge that objects — the meaning strays even though the words don't.
+  const judge = async () => ({ status: "BLOCK", judgments: [], reasons: ['fact "cpo" is not supported by its evidence — the quote says costs fell, the claim says they rose'] });
+  const opts = parseArgs(["ask", "--question", "how are the ads performing?", "--corpus", HARBOR, "--transcript", ADS, "--out", join(dir, "a.html"), "--telemetry", telemetry, "--judge", "--strict"]);
+  const { err, deps } = io();
+
+  const code = await askCommand(opts, { ...deps, judge });
+
+  assert.equal(code, 3, "the semantic judge's BLOCK refuses delivery");
+  assert.match(err.join(""), /the quote says costs fell/);
+  assert.equal(existsSync(join(dir, "a.html")), false);
+  assert.equal(readEvents(telemetry)[0].verdict.status, "BLOCK");
+});
+
+test("--judge that passes delivers normally", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "bb-ask-"));
+  const judge = async () => ({ status: "PASS", judgments: [], reasons: [] });
+  const opts = parseArgs(["ask", "--question", "how are the ads performing?", "--corpus", HARBOR, "--transcript", ADS, "--out", join(dir, "a.html"), "--telemetry", join(dir, "t.jsonl"), "--judge"]);
+  const { out, deps } = io();
+  const code = await askCommand(opts, { ...deps, judge });
+  assert.equal(code, 0);
+  assert.match(out.join(""), /faithfulness PASS/);
+});
+
 test("report renders the faithfulness dashboard over the telemetry", async () => {
   const dir = mkdtempSync(join(tmpdir(), "bb-ask-"));
   const telemetry = join(dir, "telemetry", "events.jsonl");

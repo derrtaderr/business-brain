@@ -65,6 +65,7 @@ function parseAsk(argv) {
   const out = takeValue(argv, "--out") ?? "out/answer.html";
   const telemetry = takeValue(argv, "--telemetry");
   const strict = takeBool(argv, "--strict");
+  const judge = takeBool(argv, "--judge");
 
   if (!question) throw new UsageError("ask needs --question TEXT — the question to answer");
   if (!corpus) throw new UsageError("ask needs --corpus DIR — the canon corpus directory to ground against");
@@ -73,5 +74,5 @@ function parseAsk(argv) {
   if (!out.endsWith(".html")) throw new UsageError(`--out must be a .html path, got ${out}`);
 
   refuseLeftovers(argv, "ask");
-  return Object.freeze({ command: "ask", mode, question, corpus, transcript, out, telemetry, strict });
+  return Object.freeze({ command: "ask", mode, question, corpus, transcript, out, telemetry, strict, judge });
 }

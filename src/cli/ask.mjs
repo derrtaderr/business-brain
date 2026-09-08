@@ -13,6 +13,7 @@ import { buildAnswer } from "../answer/build.mjs";
 import { renderAnswer } from "../render/render.mjs";
 import { createEgress } from "../gates/egress.mjs";
 import { scoreFaithfulness } from "../evals/faithfulness.mjs";
+import { judgeFaithfulness } from "../evals/rubric.mjs";
 import { recordAnswerVerdict, TELEMETRY_PATH } from "../evals/telemetry.mjs";
 import { GenerationRefusal } from "../generate/errors.mjs";
 import { makeQuestion } from "../types.mjs";
@@ -54,10 +55,22 @@ export async function askCommand(opts, deps) {
     const egress = deps.makeEgress ? deps.makeEgress(opts) : createEgress();
 
     // The SECOND control: the gate anchored every claim to a verbatim quote; this
-    // scores how faithfully each claim tracks that quote. The verdict is recorded
-    // to telemetry either way (post-redaction) so the dashboard sees every run,
-    // and in --strict mode a BLOCK refuses delivery.
-    const verdict = scoreFaithfulness(answer);
+    // scores how faithfully each claim tracks that quote. The lexical scorer runs
+    // always (keyless); --judge adds the LLM semantic judge and the two combine —
+    // the answer is faithful only if BOTH agree, BLOCK if either objects. The
+    // verdict is recorded to telemetry (post-redaction) so the dashboard sees
+    // every run; in --strict mode a BLOCK refuses delivery.
+    let verdict = scoreFaithfulness(answer);
+    if (opts.judge) {
+      const semantic = deps.judge ? await deps.judge(answer) : await judgeFaithfulness({ answer, env, now });
+      verdict = {
+        status: verdict.status === "BLOCK" || semantic.status === "BLOCK" ? "BLOCK" : "PASS",
+        reasons: [...verdict.reasons, ...semantic.reasons],
+        factScores: verdict.factScores,
+        judgments: semantic.judgments,
+      };
+    }
+
     await recordAnswerVerdict({
       verdict,
       telemetryPath: opts.telemetry,

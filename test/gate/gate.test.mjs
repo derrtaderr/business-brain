@@ -122,17 +122,55 @@ test("a fact keeps only its valid groundings, and stands if at least one holds",
   assert.equal(facts[0].groundings[0].quote, "the v3 scorer stacks fit and intent");
 });
 
+const OMTM_FACT = { id: "f1", text: "The OMTM is weekly qualified pipeline.", groundings: [{ docId: "omtm", quote: "the one metric that matters is qualified pipeline created per week" }] };
+
 test("gateVisuals drops a visual that references a fact which did not clear the gate", () => {
-  const facts = [{ id: "f1", text: "x", groundings: [{ docId: "omtm", quote: "qualified pipeline created per week" }] }];
   const { visuals, refusedVisuals } = gateVisuals({
     visuals: [
-      { kind: "stat", title: "OMTM", factIds: ["f1"], body: { value: "pipeline/wk" } }, // ok
-      { kind: "verdict-card", title: "Ghost", factIds: ["f99"], body: { verdict: "green" } }, // references nothing real
+      { kind: "stat", title: "OMTM", factIds: ["f1"], evidence: "qualified pipeline created per week", body: { value: "pipeline/wk" } }, // ok
+      { kind: "verdict-card", title: "Ghost", factIds: ["f99"], evidence: "qualified pipeline created per week", body: { verdict: "green" } }, // references nothing real
     ],
-    facts,
+    facts: [OMTM_FACT],
   });
   assert.equal(visuals.length, 1);
   assert.equal(visuals[0].title, "OMTM");
   assert.equal(refusedVisuals.length, 1);
   assert.match(refusedVisuals[0].reason, /f99/);
+});
+
+test("gateVisuals refuses a visual whose evidence is NOT verbatim in a backing fact's quote", () => {
+  const { visuals, refusedVisuals } = gateVisuals({
+    visuals: [
+      // References a real fact, but its evidence quotes canon the fact never stood on.
+      { kind: "stat", title: "Invented", factIds: ["f1"], evidence: "revenue collapsed ninety percent overnight", body: { value: "-90%" } },
+    ],
+    facts: [OMTM_FACT],
+  });
+  assert.equal(visuals.length, 0, "a visual drawn from canon its facts never cited cannot stand");
+  assert.equal(refusedVisuals.length, 1);
+  assert.match(refusedVisuals[0].reason, /evidence quote is not verbatim/);
+});
+
+test("gateVisuals refuses a malformed visual rather than crashing", () => {
+  const { visuals, refusedVisuals } = gateVisuals({
+    visuals: [
+      { kind: "bogus-kind", title: "Broken", factIds: ["f1"], evidence: "qualified pipeline created per week", body: {} },
+    ],
+    facts: [OMTM_FACT],
+  });
+  assert.equal(visuals.length, 0);
+  assert.match(refusedVisuals[0].reason, /malformed visual/);
+});
+
+test("gateFacts refuses a malformed candidate rather than crashing the answer", () => {
+  const corpus = CORPUS;
+  const { facts, refusals } = gateFacts({
+    candidates: [
+      // Grounds fine, but the fact itself is malformed (empty text) — a refusal, not a defect.
+      { id: "f1", text: "", groundings: [{ docId: "system-map", quote: "the v3 scorer stacks fit and intent" }] },
+    ],
+    corpus,
+  });
+  assert.equal(facts.length, 0);
+  assert.match(refusals[0].reason, /malformed fact/);
 });

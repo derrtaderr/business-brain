@@ -73,6 +73,14 @@ test("main routes ask and returns its code; a bad command exits 2", async () => 
   assert.equal(bad, 2);
 });
 
+test("a bad --corpus path is a usage error (exit 2), not a defect — the user's input to fix", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "bb-ask-"));
+  const { err, deps } = io();
+  const code = await main(["ask", "--question", "q", "--corpus", join(dir, "no-corpus-here"), "--transcript", ADS, "--out", join(dir, "a.html")], deps);
+  assert.equal(code, 2, "a missing corpus is rejected input, not a tool defect");
+  assert.match(err.join(""), /corpus/);
+});
+
 test("a non-.html --out is a usage error, exit 2", async () => {
   const { deps } = io();
   const code = await main(["ask", "--question", "q", "--corpus", HARBOR, "--transcript", ADS, "--out", "answer.txt"], deps);

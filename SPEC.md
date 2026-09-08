@@ -3,15 +3,31 @@
 Ask a question about the business, get back a **one-page visual answer** — verdict
 cards, progress bars, a diagram — instead of a wall of text. The load-bearing
 idea is the one account-scout proved: a probabilistic generator wrapped in a
-**deterministic grounding gate**. Every factual statement the answer renders must
-quote a canon document verbatim, or it is refused, listed, and never drawn. A
-visual cannot show a number the corpus does not contain.
+**deterministic grounding gate**.
+
+What the deterministic gate GUARANTEES, precisely (it is a floor, not a judge):
+
+- Every fact the answer renders carries a **verbatim canon quote**, and that
+  quote is **shown on the page beside the claim**. A statement with no verbatim
+  canon quote is refused, listed, and never drawn.
+- Every visual is **drawn from a verbatim quote of a backing fact**, and that
+  evidence is **shown on the card**. A visual cannot attach canon its facts never
+  cited, and cannot reference a fact that did not clear the gate.
+
+What it deliberately does NOT do: decide whether a paraphrase or a presented
+number *faithfully restates* its quote. That is **judgment** — an LLM could
+attach a real-but-unrelated quote to a false claim, and no substring check can
+catch that. Two things handle it instead, and the SPEC is honest that they are
+separate from the gate: the shown quotes **expose** any divergence on the page
+(a fabricated "$-4.2M" can only ever be drawn beside canon that visibly does not
+say it), and the gtm-agent-evals rubric **scores** faithfulness. The gate makes
+fabrication impossible to HIDE; it does not claim to make it impossible.
 
 This is the thesis again — deterministic controls for probabilistic systems —
 applied to generated explainers. The generator (an LLM, or a recorded fixture)
-proposes an answer; the gate decides which of its claims may be drawn; the
-renderer is deterministic HTML. What ships is a self-contained page that cannot
-assert something the business's own canon does not say.
+proposes an answer; the gate anchors every drawn thing to visible canon; the
+renderer is deterministic HTML. What ships is a self-contained page where nothing
+is drawn without its canon evidence sitting right beside it.
 
 ```
 question ──▶ generator ──▶ grounding gate ──▶ renderer ──▶ redaction-gate ──▶ one .html page
@@ -60,19 +76,26 @@ cross-lane event that comes back to the orchestrator.
 - `Refusal` — text, reason. A would-be fact that failed the grounding gate. The
   answer carries refusals as first-class output; it never silently drops them.
 - `Visual` — kind (`verdict-card` | `progress-bar` | `diagram` | `stat`), title,
-  and a body that references Facts BY ID. A visual may only cite facts that
-  cleared the gate, so nothing is ever drawn ungrounded.
+  a `body` (the presentation payload — the pretty "$900" form), `factIds`
+  referencing Facts that cleared the gate, and an `evidence` quote that must be
+  verbatim in one of those facts' groundings. The `body` is what the card draws;
+  the `evidence` is the canon anchor shown beside it so the presentation can be
+  checked against its source.
 - `Answer` — question, generatedAt, facts[], refusals[], visuals[], meta (mode,
   model when live).
 - `Artifact` — the rendered self-contained HTML string (no external assets).
 
 ## The deterministic grounding gate (inside the brain, not bolted on)
 
-Decidable, therefore refused deterministically: a fact with zero groundings; a
-grounding whose quote does not appear in the named doc's content; a grounding to
-a docId not in the corpus; a quote below the evidential floor; a visual that
-references a fact id that did not clear the gate. Judgment (does this actually
-answer the question, is the visual the right one) is scored by gtm-agent-evals.
+Decidable, therefore refused deterministically: a fact with zero valid
+groundings; a grounding whose quote does not appear in the named doc's content; a
+grounding to a docId not in the corpus; a quote below the evidential floor; a
+visual that references a fact id that did not clear the gate; a visual whose
+`evidence` is not verbatim in a backing fact's grounding; a malformed candidate
+or visual (refused, never a crash). Judgment — does this actually answer the
+question, does the paraphrase or the presented number faithfully restate its
+quote — is NOT the gate's job; it is scored by gtm-agent-evals and exposed to the
+reader by the quotes the renderer shows beside every fact and every card.
 
 ## Lane decomposition — two waves of two, inside cap 2
 

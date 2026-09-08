@@ -27,14 +27,15 @@
     }
   ],
   "visuals": [
-    { "kind": "stat", "title": "Monthly ad spend", "factIds": ["spend"], "body": { "value": "$32k / mo" } },
-    { "kind": "stat", "title": "Cost per qualified opportunity", "factIds": ["cpo"], "body": { "value": "$900", "note": "down from $1,400" } },
-    { "kind": "progress-bar", "title": "Click to booked meeting", "factIds": ["conv"], "body": { "value": 2.3, "max": 100, "unit": "%" } },
+    { "kind": "stat", "title": "Monthly ad spend", "factIds": ["spend"], "evidence": "spends thirty two thousand dollars a month on LinkedIn ads", "body": { "value": "$32k / mo" } },
+    { "kind": "stat", "title": "Cost per qualified opportunity", "factIds": ["cpo"], "evidence": "cost per qualified opportunity is nine hundred dollars, down from fourteen hundred a quarter ago", "body": { "value": "$900", "note": "down from $1,400" } },
+    { "kind": "progress-bar", "title": "Click to booked meeting", "factIds": ["conv"], "evidence": "conversion rate from click to booked meeting is two point three percent", "body": { "value": 2.3, "max": 100, "unit": "%" } },
     {
-      "_why": "MUST BE DROPPED by gateVisuals — it is backed by the fabricated fact, which the gate refuses.",
+      "_why": "MUST BE DROPPED by gateVisuals — it is backed by the fabricated fact, which the gate refuses (its factId never clears).",
       "kind": "verdict-card",
       "title": "Revenue impact",
       "factIds": ["revgrowth"],
+      "evidence": "spends thirty two thousand dollars a month on LinkedIn ads",
       "body": { "verdict": "green", "line": "ads are printing money" }
     }
   ]

@@ -38,6 +38,12 @@ export function recordedGenerator(transcriptPath) {
     throw new GenerationRefusal(`transcript ${transcriptPath} is not valid JSON: ${err.message}`, { cause: err });
   }
 
+  for (const field of ["candidates", "visuals"]) {
+    if (transcript[field] !== undefined && !Array.isArray(transcript[field]))
+      throw new GenerationRefusal(
+        `transcript ${transcriptPath}: "${field}" must be an array, got ${typeof transcript[field]} — refusing a malformed transcript`,
+      );
+  }
   const candidates = Object.freeze([...(transcript.candidates ?? [])]);
   const visuals = Object.freeze([...(transcript.visuals ?? [])]);
 

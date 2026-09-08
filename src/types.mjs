@@ -84,10 +84,17 @@ export function makeRefusal({ text, reason }) {
   return Object.freeze({ text, reason });
 }
 
-/** A visual element. Its `factIds` reference Facts that CLEARED the gate — a
- *  visual can never draw a number the corpus does not contain. `body` is a
- *  kind-specific, JSON-serialisable payload the renderer knows how to draw. */
-export function makeVisual({ kind, title, factIds, body }) {
+/** A visual element. Its `factIds` reference Facts that CLEARED the gate, and
+ *  its `evidence` is a verbatim quote from one of those facts' groundings — the
+ *  canon text the visual is drawn FROM, shown on the card beside the presented
+ *  value. The gate enforces that evidence is verbatim in a backing fact's quote,
+ *  so a fabricated number can only ever be drawn beside visibly-unrelated canon,
+ *  never hidden. `body` is the kind-specific presentation payload (the pretty
+ *  "$900" form); `evidence` is the canon anchor ("nine hundred dollars…") that
+ *  keeps that presentation honest. Whether the presentation faithfully restates
+ *  the evidence is judgment, scored by the evals rubric, exposed by the shown
+ *  quote — not something a substring check can decide. */
+export function makeVisual({ kind, title, factIds, body, evidence }) {
   if (!VISUAL_KINDS.includes(kind))
     throw new Error(`Visual kind must be one of ${VISUAL_KINDS.join("/")}, got ${JSON.stringify(kind)}`);
   if (typeof title !== "string" || title === "") throw new Error("Visual needs a title");
@@ -95,7 +102,18 @@ export function makeVisual({ kind, title, factIds, body }) {
     throw new Error("Visual needs at least one factId — a visual with no backing fact would draw ungrounded");
   if (body === undefined || body === null || typeof body !== "object")
     throw new Error("Visual needs a body object the renderer can draw");
-  return Object.freeze({ kind, title, factIds: Object.freeze([...factIds]), body: Object.freeze({ ...body }) });
+  if (typeof evidence !== "string" || evidence.trim().length < MIN_QUOTE_LENGTH)
+    throw new Error(
+      `Visual needs an evidence quote of at least ${MIN_QUOTE_LENGTH} trimmed characters — the canon text it is ` +
+        `drawn from, shown on the card. A visual with no evidence would present a number with nothing behind it`,
+    );
+  return Object.freeze({
+    kind,
+    title,
+    factIds: Object.freeze([...factIds]),
+    body: Object.freeze({ ...body }),
+    evidence,
+  });
 }
 
 export function makeAnswer({ question, generatedAt, facts, refusals, visuals, meta }) {

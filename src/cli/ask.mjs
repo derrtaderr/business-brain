@@ -25,7 +25,20 @@ export async function askCommand(opts, deps) {
   const { stdout, stderr, env = process.env, now = () => new Date().toISOString() } = deps;
   try {
     const question = makeQuestion({ text: opts.question }).text;
-    const corpus = loadCorpus(opts.corpus);
+
+    // A corpus that cannot load is the USER's input to fix (wrong --corpus path,
+    // an empty or malformed directory), not a defect in the tool. Mapped to a
+    // usage exit here at the boundary where exit codes live, so a stranger who
+    // points at the wrong folder is told their input was rejected, not that the
+    // tool is broken.
+    let corpus;
+    try {
+      corpus = loadCorpus(opts.corpus);
+    } catch (err) {
+      stderr.write(`corpus: ${err.message}\n`);
+      return EXIT.USAGE;
+    }
+
     const generator = deps.makeGenerator
       ? deps.makeGenerator(opts)
       : opts.mode === "live"

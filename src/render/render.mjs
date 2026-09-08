@@ -43,38 +43,53 @@ const STYLE = `
   .diagram li { background: #eef2ff; border: 1px solid #dbe0f5; border-radius: 8px; padding: 6px 10px; font-size: 13px; }
   .diagram li::after { content: "\\2192"; margin-left: 10px; color: #9ca3af; }
   .diagram li:last-child::after { content: ""; margin: 0; }
-  .refused { margin-top: 36px; border-top: 1px solid #e5e7eb; padding-top: 18px; }
-  .refused h2 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.06em; color: #9ca3af; margin: 0 0 10px; }
-  .refused li { color: #6b7280; font-size: 13px; margin-bottom: 6px; }
+  .evi { margin-top: 10px; padding-top: 8px; border-top: 1px dashed #e5e7eb; color: #6b7280; font-size: 12px; font-style: italic; }
+  .grounded { margin-top: 36px; border-top: 1px solid #e5e7eb; padding-top: 18px; }
+  .grounded h2, .refused h2 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.06em; color: #9ca3af; margin: 0 0 10px; }
+  .grounded li { margin-bottom: 12px; font-size: 14px; color: #1a1c22; list-style: none; }
+  .grounded ul, .refused ul { padding-left: 0; }
+  .grounded .quote { color: #6b7280; font-size: 13px; margin-top: 3px; }
+  .grounded .quote::before { content: "\\201C"; }
+  .grounded .quote::after { content: "\\201D"; }
+  .refused { margin-top: 28px; border-top: 1px solid #e5e7eb; padding-top: 18px; }
+  .refused li { color: #6b7280; font-size: 13px; margin-bottom: 6px; list-style: none; }
   .refused .rtext { color: #374151; }
 `;
+
+/** The evidence line every card carries — the canon quote the visual is drawn
+ *  from, shown so a presented number can be checked against its source. */
+function evidenceLine(v) {
+  return `<div class="evi">from canon: ${escapeHtml(v.evidence)}</div>`;
+}
 
 function renderStat(v) {
   const note = v.body.note ? `<div class="note">${escapeHtml(v.body.note)}</div>` : "";
   return `<div class="card stat"><h3>${escapeHtml(v.title)}</h3>` +
-    `<div class="val">${escapeHtml(v.body.value ?? "")}</div>${note}</div>`;
+    `<div class="val">${escapeHtml(v.body.value ?? "")}</div>${note}${evidenceLine(v)}</div>`;
 }
 
 function renderProgress(v) {
-  const max = Number(v.body.max) || 100;
-  const value = Number(v.body.value) || 0;
+  const rawMax = Number(v.body.max);
+  const max = Number.isFinite(rawMax) && rawMax > 0 ? rawMax : 100;
+  const rawValue = Number(v.body.value);
+  const value = Number.isFinite(rawValue) ? rawValue : 0;
   const pct = Math.max(0, Math.min(100, (value / max) * 100));
   const unit = v.body.unit ? escapeHtml(v.body.unit) : "";
   return `<div class="card"><h3>${escapeHtml(v.title)}</h3>` +
     `<div class="bar"><span style="width: ${pct}%"></span></div>` +
-    `<div class="bar-label">${escapeHtml(value)}${unit} of ${escapeHtml(max)}${unit}</div></div>`;
+    `<div class="bar-label">${escapeHtml(value)}${unit} of ${escapeHtml(max)}${unit}</div>${evidenceLine(v)}</div>`;
 }
 
 function renderVerdict(v) {
   const cls = ["green", "amber", "red"].includes(v.body.verdict) ? `verdict-${v.body.verdict}` : "";
   return `<div class="card verdict ${cls}"><h3>${escapeHtml(v.title)}</h3>` +
-    `<div class="line">${escapeHtml(v.body.line ?? "")}</div></div>`;
+    `<div class="line">${escapeHtml(v.body.line ?? "")}</div>${evidenceLine(v)}</div>`;
 }
 
 function renderDiagram(v) {
   const steps = Array.isArray(v.body.steps) ? v.body.steps : [];
   const items = steps.map((s) => `<li>${escapeHtml(s)}</li>`).join("");
-  return `<div class="card diagram"><h3>${escapeHtml(v.title)}</h3><ol>${items}</ol></div>`;
+  return `<div class="card diagram"><h3>${escapeHtml(v.title)}</h3><ol>${items}</ol>${evidenceLine(v)}</div>`;
 }
 
 function renderVisual(v) {
@@ -95,6 +110,23 @@ function renderVisual(v) {
  */
 export function renderAnswer(answer) {
   const cards = answer.visuals.map(renderVisual).join("\n");
+
+  // Every fact rendered beside its verbatim canon quote — the evidence behind
+  // each drawn number, so a paraphrase that strays from its source is exposed on
+  // the page rather than hidden behind a confident stat.
+  const grounded =
+    answer.facts.length === 0
+      ? ""
+      : `<section class="grounded"><h2>Grounded in canon (${answer.facts.length})</h2><ul>` +
+        answer.facts
+          .map(
+            (f) =>
+              `<li>${escapeHtml(f.text)}` +
+              f.groundings.map((g) => `<div class="quote">${escapeHtml(g.quote)}</div>`).join("") +
+              `</li>`,
+          )
+          .join("") +
+        `</ul></section>`;
 
   const refused =
     answer.refusals.length === 0
@@ -122,6 +154,7 @@ export function renderAnswer(answer) {
 <div class="grid">
 ${cards}
 </div>
+${grounded}
 ${refused}
 </div>
 </body>

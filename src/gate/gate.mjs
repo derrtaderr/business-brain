@@ -16,7 +16,7 @@
 //    at a refused or invented fact id would draw a number the corpus does not
 //    contain, so it is dropped and recorded as a refused visual.
 
-import { makeFact, makeRefusal, validateGroundingAgainstCorpus } from "../types.mjs";
+import { makeFact, makeVisual, makeRefusal, validateGroundingAgainstCorpus } from "../types.mjs";
 
 /**
  * Decide which candidate facts may stand.
@@ -50,43 +50,79 @@ export function gateFacts({ candidates, corpus }) {
         reasons.length > 0
           ? reasons.join("; ")
           : "no grounding was offered — an ungrounded statement cannot be drawn";
-      refusals.push(makeRefusal({ text: candidate.text, reason: why }));
+      refusals.push(makeRefusal({ text: candidate.text || "(no text)", reason: why }));
       continue;
     }
 
-    facts.push(makeFact({ id: candidate.id, text: candidate.text, groundings: valid }));
+    // A candidate that grounds but is otherwise malformed (empty text/id) must
+    // be REFUSED, not crash the whole answer — one quirky element from a live
+    // generator is a refusal, not a defect.
+    try {
+      facts.push(makeFact({ id: candidate.id, text: candidate.text, groundings: valid }));
+    } catch (err) {
+      refusals.push(makeRefusal({ text: candidate.text || "(malformed candidate)", reason: `malformed fact: ${err.message}` }));
+    }
   }
 
   return { facts, refusals };
 }
 
 /**
- * Decide which visuals may draw. A visual survives only if every fact id it
- * references cleared the gate.
+ * Decide which visuals may draw. A visual survives only if:
+ *   1. every fact id it references cleared the gate, AND
+ *   2. its `evidence` is a verbatim substring of a backing fact's grounding
+ *      quote (the canon text the card is drawn from), AND
+ *   3. it is a well-formed Visual (malformed → refused, never a crash).
+ *
+ * Rule 2 is the strengthening: a visual can no longer carry an arbitrary
+ * `evidence` — it must quote the same canon the fact stood on. A fabricated
+ * number can then only ever be drawn beside canon that visibly does not say it,
+ * because the renderer shows the evidence. Whether the presented number
+ * faithfully restates that evidence is judgment (the evals rubric's job, exposed
+ * by the shown quote), not something this gate pretends to decide.
  *
  * @param {object} args
- * @param {Array<{kind: string, title: string, factIds: string[], body: object}>} args.visuals
- * @param {Array<{id: string}>} args.facts the facts that cleared gateFacts
+ * @param {Array<object>} args.visuals raw generator visuals
+ * @param {Array<{id: string, groundings: Array<{quote: string}>}>} args.facts the cleared facts
  * @returns {{visuals: Array<object>, refusedVisuals: Array<{title: string, reason: string}>}}
  */
 export function gateVisuals({ visuals, facts }) {
   if (!Array.isArray(visuals)) throw new Error("gateVisuals needs a visuals array");
   if (!Array.isArray(facts)) throw new Error("gateVisuals needs a facts array");
 
-  const known = new Set(facts.map((f) => f.id));
+  const byId = new Map(facts.map((f) => [f.id, f]));
   const kept = [];
   const refusedVisuals = [];
 
   for (const visual of visuals) {
-    const missing = (Array.isArray(visual.factIds) ? visual.factIds : []).filter((id) => !known.has(id));
+    const factIds = Array.isArray(visual.factIds) ? visual.factIds : [];
+    const missing = factIds.filter((id) => !byId.has(id));
     if (missing.length > 0) {
       refusedVisuals.push({
-        title: visual.title,
+        title: visual.title ?? "(untitled visual)",
         reason: `references fact id(s) that did not clear the gate: ${missing.join(", ")}`,
       });
       continue;
     }
-    kept.push(visual);
+
+    // The canon the backing facts stood on. The visual's evidence must quote it.
+    const backingQuotes = factIds
+      .flatMap((id) => byId.get(id).groundings.map((g) => g.quote))
+      .join("\n");
+    if (typeof visual.evidence !== "string" || !backingQuotes.includes(visual.evidence)) {
+      refusedVisuals.push({
+        title: visual.title ?? "(untitled visual)",
+        reason: "its evidence quote is not verbatim in any backing fact's grounding — a visual must be drawn from the same canon its facts stand on",
+      });
+      continue;
+    }
+
+    // Construct through makeVisual so a malformed visual is refused, not a crash.
+    try {
+      kept.push(makeVisual(visual));
+    } catch (err) {
+      refusedVisuals.push({ title: visual.title ?? "(malformed visual)", reason: `malformed visual: ${err.message}` });
+    }
   }
 
   return { visuals: kept, refusedVisuals };

@@ -40,8 +40,13 @@ test("a fact with zero groundings cannot be constructed — that is a Refusal's 
 });
 
 test("a visual with no backing fact id cannot be constructed", () => {
-  assert.throws(() => makeVisual({ kind: "stat", title: "T", factIds: [], body: {} }), /at least one factId/);
-  assert.throws(() => makeVisual({ kind: "bogus", title: "T", factIds: ["f"], body: {} }), /Visual kind/);
+  assert.throws(() => makeVisual({ kind: "stat", title: "T", factIds: [], body: {}, evidence: "a long enough evidence quote here" }), /at least one factId/);
+  assert.throws(() => makeVisual({ kind: "bogus", title: "T", factIds: ["f"], body: {}, evidence: "a long enough evidence quote here" }), /Visual kind/);
+});
+
+test("a visual with no evidence quote cannot be constructed — a card must show what it is drawn from", () => {
+  assert.throws(() => makeVisual({ kind: "stat", title: "T", factIds: ["f"], body: { value: "x" } }), /evidence quote/);
+  assert.throws(() => makeVisual({ kind: "stat", title: "T", factIds: ["f"], body: { value: "x" }, evidence: "short" }), /evidence quote/);
 });
 
 test("a live answer must name its model; a recorded one need not", () => {

@@ -65,7 +65,7 @@ test("a live answer carries the model name through to meta", async () => {
     async generate() {
       return {
         candidates: [{ id: "spend", text: "Spend is $32k/mo.", groundings: [{ docId: "ads", quote: "spends thirty two thousand dollars a month on LinkedIn ads" }] }],
-        visuals: [{ kind: "stat", title: "Spend", factIds: ["spend"], body: { value: "$32k" } }],
+        visuals: [{ kind: "stat", title: "Spend", factIds: ["spend"], evidence: "spends thirty two thousand dollars a month on LinkedIn ads", body: { value: "$32k" } }],
         model: "claude-opus-5",
       };
     },

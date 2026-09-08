@@ -117,6 +117,16 @@ reader by the quotes the renderer shows beside every fact and every card.
   guards the HTML write; `gtm-agent-evals` scores every answer into JSONL
   telemetry; `brain ask|render|report` CLI with exit codes as contract.
 
+## Known wiring note (same as account-scout)
+
+`gtm-agent-evals` ships TypeScript with no `prepare` script, so a git install has
+no `dist/`. The evals layer imports from `gtm-agent-evals/dist/index.js`, so until
+the one-line upstream fix (`"prepare": "tsc"`, generally correct, needs Jason's
+push-yes) lands, a fresh install must build it in place (`cd
+node_modules/gtm-agent-evals && npx tsc`). The recorded path, the gate, the
+renderer, and the faithfulness scorer itself need no such step — only the
+telemetry/dashboard reuse touches the dist.
+
 ## Discipline (binding, the full house contract)
 
 TDD watch-the-red, commit per cycle. Adversarial senior review per lane, fix
